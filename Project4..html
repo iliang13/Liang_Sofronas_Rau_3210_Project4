@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.152.2/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "three";
+
+      function makeTexture(drawfn) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 358;
+        const ctx = canvas.getContext("2d");
+        drawfn(ctx);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.mipmaps = false;
+        texture.minFilter = THREE.LinearFilter;
+        return texture;
+      }
+
+      const cardBackTexture = makeTexture((ctx) => {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, 256, 358);
+        ctx.fillStyle = "#174a7e";
+        ctx.fillRect(12, 12, 232, 334);
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 8;
+        ctx.strokeRect(24, 24, 208, 310);
+        ctx.lineWidth = 2;
+        ctx.strokeRect(36, 36, 184, 286);
+        ctx.beginPath();
+        ctx.moveTo(36, 36);
+        ctx.lineTo(220, 322);
+        ctx.moveTo(220, 36);
+        ctx.lineTo(36, 322);
+        ctx.stroke();
+      });
+      const backMaterial = new THREE.MeshBasicMaterial({
+        map: cardBackTexture,
+      });
+      const edgeMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+
+      function frontTexture(value, suit) {
+        const labels = { 11: "J", 12: "Q", 13: "K", 14: "A" };
+        const symbols = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
+        const rank = labels[value] || value;
+        const symbol = symbols[suit];
+        const color =
+          suit === "hearts" || suit === "diamonds" ? "#c62828" : "#111111";
+
+        return makeTexture((ctx) => {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, 256, 358);
+          ctx.strokeStyle = "#222222";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(8, 8, 240, 342);
+          ctx.fillStyle = color;
+          ctx.textAlign = "center";
+          ctx.font = "bold 48px sans-serif";
+          ctx.fillText(rank, 128, 142);
+          ctx.font = "72px sans-serif";
+          ctx.fillText(symbol, 128, 232);
+        });
+      }
+
+      class Card {
+        constructor(value, suit) {
+          this.value = value;
+          this.suit = suit;
+          this.frontTexture = frontTexture(value, suit);
+
+          const frontMaterial = new THREE.MeshBasicMaterial({
+            map: this.frontTexture,
+          });
+
+          const geometry = new THREE.BoxGeometry(1, 0.02, 1.4);
+
+          this.mesh = new THREE.Mesh(geometry, [
+            edgeMaterial,
+            edgeMaterial,
+            frontMaterial,
+            backMaterial,
+            edgeMaterial,
+            edgeMaterial,
+          ]);
+        }
+
+        faceUp(faceUp) {
+          this.mesh.rotation.x = faceUp ? 0 : Math.PI;
+        }
+      }
+
+      function createDeck() {
+        const deck = [];
+        for (const suit of ["hearts", "diamonds", "clubs", "spades"]) {
+          for (let value = 2; value <= 14; value++) {
+            deck.push(new Card(value, suit));
+          }
+        }
+        return deck;
+      }
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x228b22);
+
+      const camera = new THREE.PerspectiveCamera(
+        50,
+        innerWidth / innerHeight,
+        0.1,
+        100,
+      );
+      camera.position.set(0, 10, 8);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(innerWidth, innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const deck = createDeck();
+
+      for (let i = 0; i < 3; i++) {
+        deck[i].mesh.position.set((i - 1) * 2, 0, 2);
+        scene.add(deck[i].mesh);
+      }
+
+      for (let i = 0; i < 20; i++) {
+        const card = deck[10 + i];
+        card.faceUp(false);
+        card.mesh.position.set(0, i * 0.02, 0);
+        scene.add(card.mesh);
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      animate();
+    </script>
+  </body>
+</html>
