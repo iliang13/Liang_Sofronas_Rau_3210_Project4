@@ -120,16 +120,23 @@
 
       const camera = new THREE.PerspectiveCamera(
         50,
-        innerWidth / innerHeight,
+        window.innerWidth / window.innerHeight,
         0.1,
         100,
       );
-      camera.position.set(0, 10, 8);
+      camera.position.set(0, 10, 12);
       camera.lookAt(0, 0, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
 
       const deck = createDeck();
 
