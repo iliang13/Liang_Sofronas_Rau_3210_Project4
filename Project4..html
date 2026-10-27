@@ -1,4 +1,10 @@
 <!doctype html>
+<!--
+  To run locally from the project folder:
+    cd .
+    python3 -m http.server 8000
+  Then open: http://localhost:8000/Project4..html
+-->
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -126,7 +132,7 @@
       }
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x228b22);
+      scene.background = null;
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
       scene.add(ambientLight);
@@ -181,6 +187,18 @@
       ground.receiveShadow = true;
       scene.add(ground);
 
+      const skyboxLoader = new THREE.CubeTextureLoader().setPath("skybox/");
+      const skyboxTexture = skyboxLoader.load([
+        "Daylight Box_Right.bmp",
+        "Daylight Box_Left.bmp",
+        "Daylight Box_Top.bmp",
+        "Daylight Box_Bottom.bmp",
+        "Daylight Box_Front.bmp",
+        "Daylight Box_Back.bmp",
+      ]);
+      skyboxTexture.colorSpace = THREE.SRGBColorSpace;
+      scene.background = skyboxTexture;
+
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -205,6 +223,7 @@
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
       }
+
       animate();
     </script>
   </body>
