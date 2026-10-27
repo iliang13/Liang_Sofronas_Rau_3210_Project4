@@ -50,10 +50,16 @@
         ctx.lineTo(36, 322);
         ctx.stroke();
       });
-      const backMaterial = new THREE.MeshBasicMaterial({
+      const backMaterial = new THREE.MeshStandardMaterial({
         map: cardBackTexture,
+        roughness: 0.8,
+        metalness: 0.1,
       });
-      const edgeMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: "white",
+        roughness: 0.7,
+        metalness: 0.1,
+      });
 
       function frontTexture(value, suit) {
         const labels = { 11: "J", 12: "Q", 13: "K", 14: "A" };
@@ -84,8 +90,10 @@
           this.suit = suit;
           this.frontTexture = frontTexture(value, suit);
 
-          const frontMaterial = new THREE.MeshBasicMaterial({
+          const frontMaterial = new THREE.MeshStandardMaterial({
             map: this.frontTexture,
+            roughness: 0.8,
+            metalness: 0.1,
           });
 
           const geometry = new THREE.BoxGeometry(1, 0.02, 1.4);
@@ -117,6 +125,19 @@
 
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x228b22);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0xffb266, 1.5, 25, 2);
+      pointLight.position.set(0, 4, 5);
+      scene.add(pointLight);
+
+      const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.1);
+      sunLight.position.set(-7, 8, 5);
+      sunLight.target.position.set(0, 0, 0);
+      scene.add(sunLight);
+      scene.add(sunLight.target);
 
       const camera = new THREE.PerspectiveCamera(
         50,
