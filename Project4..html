@@ -106,6 +106,8 @@
             edgeMaterial,
             edgeMaterial,
           ]);
+          this.mesh.castShadow = true;
+          this.mesh.receiveShadow = true;
         }
 
         faceUp(faceUp) {
@@ -131,11 +133,22 @@
 
       const pointLight = new THREE.PointLight(0xffb266, 1.5, 25, 2);
       pointLight.position.set(0, 4, 5);
+      pointLight.castShadow = true;
+      pointLight.shadow.mapSize.set(1024, 1024);
+      pointLight.shadow.bias = -0.0005;
       scene.add(pointLight);
 
       const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.1);
       sunLight.position.set(-7, 8, 5);
       sunLight.target.position.set(0, 0, 0);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.set(2048, 2048);
+      sunLight.shadow.camera.left = -10;
+      sunLight.shadow.camera.right = 10;
+      sunLight.shadow.camera.top = 10;
+      sunLight.shadow.camera.bottom = -10;
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 30;
       scene.add(sunLight);
       scene.add(sunLight.target);
 
@@ -149,9 +162,24 @@
       camera.lookAt(0, 0, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
+
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshStandardMaterial({
+          color: 0x1a3d1a,
+          roughness: 0.95,
+          metalness: 0.05,
+        }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.52;
+      ground.receiveShadow = true;
+      scene.add(ground);
 
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
