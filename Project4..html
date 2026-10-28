@@ -183,8 +183,33 @@
         scene.add(card.mesh);
       });
 
+      deck.forEach((card) => {
+        card.targetPosition = card.mesh.position.clone();
+      });
+
+      let currentPlayer = 0;
+
+      window.addEventListener("keydown", (e) => {
+        if (e.key.toLowerCase() === "n") {
+          const c1 = player1.shift();
+          const c2 = player2.shift();
+          const c3 = player3.shift();
+
+          c1.faceUp(true);
+          c2.faceUp(true);
+          c3.faceUp(true);
+
+          c1.targetPosition.set(-1.5, 1, 0);
+          c2.targetPosition.set(0, 1, 0);
+          c3.targetPosition.set(1.5, 1, 0);
+        }
+      });
+
       function animate() {
         requestAnimationFrame(animate);
+        deck.forEach((card) => {
+          card.mesh.position.lerp(card.targetPosition, 0.1);
+        });
         renderer.render(scene, camera);
       }
       animate();
