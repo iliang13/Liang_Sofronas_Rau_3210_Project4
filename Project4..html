@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -122,7 +122,7 @@
         50,
         window.innerWidth / window.innerHeight,
         0.1,
-        100,
+        100
       );
       camera.position.set(0, 10, 12);
       camera.lookAt(0, 0, 0);
@@ -145,12 +145,43 @@
         scene.add(deck[i].mesh);
       }
 
-      for (let i = 0; i < 20; i++) {
-        const card = deck[10 + i];
+      const player1 = [];
+      const player2 = [];
+      const player3 = [];
+
+      deck.sort(() => Math.random() - 0.5);
+
+      deck.forEach((card, index) => {
+        if (index % 3 === 0) {
+          player1.push(card);
+        } else if (index % 3 === 1) {
+          player2.push(card);
+        } else {
+          player3.push(card);
+        }
+      });
+
+      const p1Position = new THREE.Vector3(-4, 0, 0);
+      const p2Position = new THREE.Vector3(4, 0, 0);
+      const p3Position = new THREE.Vector3(0, 0, -4);
+
+      player1.forEach((card, i) => {
         card.faceUp(false);
-        card.mesh.position.set(0, i * 0.02, 0);
+        card.mesh.position.set(-5, i * 0.03, 0);
         scene.add(card.mesh);
-      }
+      });
+
+      player2.forEach((card, i) => {
+        card.faceUp(false);
+        card.mesh.position.set(5, i * 0.03, 0);
+        scene.add(card.mesh);
+      });
+
+      player3.forEach((card, i) => {
+        card.faceUp(false);
+        card.mesh.position.set(0, i * 0.03, -5);
+        scene.add(card.mesh);
+      });
 
       function animate() {
         requestAnimationFrame(animate);
