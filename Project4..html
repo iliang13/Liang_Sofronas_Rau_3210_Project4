@@ -188,9 +188,17 @@
       });
 
       let currentPlayer = 0;
-
       window.addEventListener("keydown", (e) => {
         if (e.key.toLowerCase() === "n") {
+          if (
+            player1.length === 0 ||
+            player2.length === 0 ||
+            player3.length === 0
+          ) {
+            console.log("Game Over");
+            return;
+          }
+
           const c1 = player1.shift();
           const c2 = player2.shift();
           const c3 = player3.shift();
@@ -202,6 +210,43 @@
           c1.targetPosition.set(-1.5, 1, 0);
           c2.targetPosition.set(0, 1, 0);
           c3.targetPosition.set(1.5, 1, 0);
+
+          setTimeout(() => {
+            let winnerDeck = player1;
+            let highestCard = c1;
+
+            if (c2.value > highestCard.value) {
+              highestCard = c2;
+              winnerDeck = player2;
+            }
+
+            if (c3.value > highestCard.value) {
+              highestCard = c3;
+              winnerDeck = player3;
+            }
+
+            console.log("Winner:", highestCard.value);
+
+            winnerDeck.push(c1, c2, c3);
+
+            if (winnerDeck === player1) {
+              c1.targetPosition.set(-5, player1.length * 0.05, 0);
+              c2.targetPosition.set(-5, (player1.length + 1) * 0.05, 0);
+              c3.targetPosition.set(-5, (player1.length + 2) * 0.05, 0);
+            }
+
+            if (winnerDeck === player2) {
+              c1.targetPosition.set(5, player2.length * 0.05, 0);
+              c2.targetPosition.set(5, (player2.length + 1) * 0.05, 0);
+              c3.targetPosition.set(5, (player2.length + 2) * 0.05, 0);
+            }
+
+            if (winnerDeck === player3) {
+              c1.targetPosition.set(0, player3.length * 0.05, -5);
+              c2.targetPosition.set(0, (player3.length + 1) * 0.05, -5);
+              c3.targetPosition.set(0, (player3.length + 2) * 0.05, -5);
+            }
+          }, 1500);
         }
       });
 
