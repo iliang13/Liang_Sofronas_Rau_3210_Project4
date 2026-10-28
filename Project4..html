@@ -1,3 +1,10 @@
+<!doctype html>
+<!--
+  To run locally from the project folder:
+    cd .
+    python3 -m http.server 8000
+  Then open: http://localhost:8000/Project4..html
+-->
 <!DOCTYPE html>
 <html>
   <head>
@@ -20,6 +27,8 @@
     <script type="module">
       import * as THREE from "three";
 
+      // Create custom card textures by drawing onto a canvas.
+      // This keeps the card fronts and backs visually consistent in 2D and 3D.
       function makeTexture(drawfn) {
         const canvas = document.createElement("canvas");
         canvas.width = 256;
@@ -33,6 +42,7 @@
         return texture;
       }
 
+      // Back of the card design used for all cards in the deck.
       const cardBackTexture = makeTexture((ctx) => {
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, 256, 358);
@@ -50,11 +60,20 @@
         ctx.lineTo(36, 322);
         ctx.stroke();
       });
-      const backMaterial = new THREE.MeshBasicMaterial({
-        map: cardBackTexture,
-      });
-      const edgeMaterial = new THREE.MeshBasicMaterial({ color: "white" });
 
+      // Shared materials for the card faces and borders.
+      const backMaterial = new THREE.MeshStandardMaterial({
+        map: cardBackTexture,
+        roughness: 0.8,
+        metalness: 0.1,
+      });
+      const edgeMaterial = new THREE.MeshStandardMaterial({
+        color: "white",
+        roughness: 0.7,
+        metalness: 0.1,
+      });
+
+      // Creates the front face for a card based on its rank and suit.
       function frontTexture(value, suit) {
         const labels = { 11: "J", 12: "Q", 13: "K", 14: "A" };
         const symbols = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
@@ -78,14 +97,17 @@
         });
       }
 
+      // A playing card is a thin box with a textured front and a textured back.
       class Card {
         constructor(value, suit) {
           this.value = value;
           this.suit = suit;
           this.frontTexture = frontTexture(value, suit);
 
-          const frontMaterial = new THREE.MeshBasicMaterial({
+          const frontMaterial = new THREE.MeshStandardMaterial({
             map: this.frontTexture,
+            roughness: 0.8,
+            metalness: 0.1,
           });
 
           const geometry = new THREE.BoxGeometry(1, 0.02, 1.4);
@@ -98,13 +120,17 @@
             edgeMaterial,
             edgeMaterial,
           ]);
+          this.mesh.castShadow = true;
+          this.mesh.receiveShadow = true;
         }
 
+        // Rotate around the X-axis to flip the card between face up and face down.
         faceUp(faceUp) {
           this.mesh.rotation.x = faceUp ? 0 : Math.PI;
         }
       }
 
+      // Build a standard 52-card deck.
       function createDeck() {
         const deck = [];
         for (const suit of ["hearts", "diamonds", "clubs", "spades"]) {
@@ -115,8 +141,33 @@
         return deck;
       }
 
+      // 3D scene setup: lights, camera, renderer, ground, and skybox.
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x228b22);
+      scene.background = null;
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0xffb266, 1.5, 25, 2);
+      pointLight.position.set(0, 4, 5);
+      pointLight.castShadow = true;
+      pointLight.shadow.mapSize.set(1024, 1024);
+      pointLight.shadow.bias = -0.0005;
+      scene.add(pointLight);
+
+      const sunLight = new THREE.DirectionalLight(0xfff3d6, 1.1);
+      sunLight.position.set(-7, 8, 5);
+      sunLight.target.position.set(0, 0, 0);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.set(2048, 2048);
+      sunLight.shadow.camera.left = -10;
+      sunLight.shadow.camera.right = 10;
+      sunLight.shadow.camera.top = 10;
+      sunLight.shadow.camera.bottom = -10;
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 30;
+      scene.add(sunLight);
+      scene.add(sunLight.target);
 
       const camera = new THREE.PerspectiveCamera(
         50,
@@ -128,16 +179,46 @@
       camera.lookAt(0, 0, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
+      // Ground plane and environment background for the card table scene.
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshStandardMaterial({
+          color: 0x1a3d1a,
+          roughness: 0.95,
+          metalness: 0.05,
+        }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.52;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const skyboxLoader = new THREE.CubeTextureLoader().setPath("skybox/");
+      const skyboxTexture = skyboxLoader.load([
+        "Daylight Box_Right.bmp",
+        "Daylight Box_Left.bmp",
+        "Daylight Box_Top.bmp",
+        "Daylight Box_Bottom.bmp",
+        "Daylight Box_Front.bmp",
+        "Daylight Box_Back.bmp",
+      ]);
+      skyboxTexture.colorSpace = THREE.SRGBColorSpace;
+      scene.background = skyboxTexture;
+
+      // Keep the render aligned with the browser window size.
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
+      // Create the deck and place a few cards into the scene.
       const deck = createDeck();
 
       for (let i = 0; i < 3; i++) {
@@ -261,6 +342,7 @@
         });
         renderer.render(scene, camera);
       }
+
       animate();
     </script>
   </body>
