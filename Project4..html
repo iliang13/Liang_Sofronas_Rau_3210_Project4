@@ -302,6 +302,7 @@
       });
 
       let currentPlayer = 0;
+      let shadowsEnabled = true;
       window.addEventListener("keydown", (e) => {
         const key = e.key.toLowerCase();
 
@@ -315,8 +316,38 @@
           return;
         }
 
-        if (key === "s") {
+        if (key === "t") {
           sunLight.visible = !sunLight.visible;
+          return;
+        }
+
+        if (key === "m") {
+          shadowsEnabled = !shadowsEnabled;
+          renderer.shadowMap.enabled = shadowsEnabled;
+          pointLight.castShadow = shadowsEnabled;
+          sunLight.castShadow = shadowsEnabled;
+          pointLight.shadow.needsUpdate = true;
+          sunLight.shadow.needsUpdate = true;
+          return;
+        }
+
+        if (key === "w") {
+          pointLight.position.z -= 0.5;
+          return;
+        }
+
+        if (key === "a") {
+          pointLight.position.x -= 0.5;
+          return;
+        }
+
+        if (key === "s") {
+          pointLight.position.z += 0.5;
+          return;
+        }
+
+        if (key === "d") {
+          pointLight.position.x += 0.5;
           return;
         }
 
