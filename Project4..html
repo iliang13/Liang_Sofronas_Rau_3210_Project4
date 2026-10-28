@@ -5,7 +5,7 @@
     python3 -m http.server 8000
   Then open: http://localhost:8000/Project4..html
 -->
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -173,7 +173,7 @@
         50,
         window.innerWidth / window.innerHeight,
         0.1,
-        100
+        100,
       );
       camera.position.set(0, 10, 12);
       camera.lookAt(0, 0, 0);
@@ -185,17 +185,50 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Ground plane and environment background for the card table scene.
+      const feltCanvas = document.createElement("canvas");
+      feltCanvas.width = 512;
+      feltCanvas.height = 512;
+      const feltContext = feltCanvas.getContext("2d");
+      feltContext.fillStyle = "#176b3f";
+      feltContext.fillRect(0, 0, feltCanvas.width, feltCanvas.height);
+
+      let textureSeed = 17;
+      const randomTextureValue = () => {
+        textureSeed = (textureSeed * 16807) % 2147483647;
+        return (textureSeed - 1) / 2147483646;
+      };
+
+      for (let i = 0; i < 5000; i++) {
+        const shade = randomTextureValue() > 0.5 ? "#277b4d" : "#105d36";
+        feltContext.globalAlpha = 0.12 + randomTextureValue() * 0.18;
+        feltContext.strokeStyle = shade;
+        feltContext.lineWidth = 1;
+        const x = randomTextureValue() * feltCanvas.width;
+        const y = randomTextureValue() * feltCanvas.height;
+        feltContext.beginPath();
+        feltContext.moveTo(x, y);
+        feltContext.lineTo(x + 1 + randomTextureValue() * 3, y + 1);
+        feltContext.stroke();
+      }
+      feltContext.globalAlpha = 1;
+
+      const feltTexture = new THREE.CanvasTexture(feltCanvas);
+      feltTexture.colorSpace = THREE.SRGBColorSpace;
+      feltTexture.wrapS = THREE.RepeatWrapping;
+      feltTexture.wrapT = THREE.RepeatWrapping;
+      feltTexture.repeat.set(10, 10);
+      feltTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 20),
         new THREE.MeshStandardMaterial({
-          color: 0x1a3d1a,
+          map: feltTexture,
           roughness: 0.95,
-          metalness: 0.05,
+          metalness: 0,
         }),
       );
       ground.rotation.x = -Math.PI / 2;
-      ground.position.y = -0.52;
+      ground.position.y = -0.02;
       ground.receiveShadow = true;
       scene.add(ground);
 
@@ -270,7 +303,24 @@
 
       let currentPlayer = 0;
       window.addEventListener("keydown", (e) => {
-        if (e.key.toLowerCase() === "n") {
+        const key = e.key.toLowerCase();
+
+        if (key === "l") {
+          ambientLight.visible = !ambientLight.visible;
+          return;
+        }
+
+        if (key === "p") {
+          pointLight.visible = !pointLight.visible;
+          return;
+        }
+
+        if (key === "s") {
+          sunLight.visible = !sunLight.visible;
+          return;
+        }
+
+        if (key === "n") {
           if (
             player1.length === 0 ||
             player2.length === 0 ||
