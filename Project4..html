@@ -185,6 +185,7 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
+      // Created table top texture to look like felt.
       const feltCanvas = document.createElement("canvas");
       feltCanvas.width = 512;
       feltCanvas.height = 512;
@@ -219,6 +220,7 @@
       feltTexture.repeat.set(10, 10);
       feltTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
+      // Added the tabletop and background environment to the scene.
       const ground = new THREE.Mesh(
         new THREE.PlaneGeometry(20, 20),
         new THREE.MeshStandardMaterial({
@@ -259,6 +261,7 @@
         scene.add(deck[i].mesh);
       }
 
+      // Shuffle the cards and split them among the three players.
       const player1 = [];
       const player2 = [];
       const player3 = [];
@@ -301,6 +304,7 @@
         card.targetPosition = card.mesh.position.clone();
       });
 
+      // Set up toggles for all of the lights and shadows.
       let currentPlayer = 0;
       let shadowsEnabled = true;
       window.addEventListener("keydown", (e) => {
@@ -352,6 +356,7 @@
         }
 
         if (key === "n") {
+          // Reveals one card per player and then the winner get all three of the cards.
           if (
             player1.length === 0 ||
             player2.length === 0 ||
