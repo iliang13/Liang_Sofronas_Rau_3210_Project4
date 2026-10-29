@@ -281,6 +281,11 @@
       const p1Position = new THREE.Vector3(-4, 0, 0);
       const p2Position = new THREE.Vector3(4, 0, 0);
       const p3Position = new THREE.Vector3(0, 0, -4);
+      const players = [
+        { name: "Player 1", deck: player1, stackX: -5, stackZ: 0 },
+        { name: "Player 2", deck: player2, stackX: 5, stackZ: 0 },
+        { name: "Player 3", deck: player3, stackX: 0, stackZ: -5 },
+      ];
 
       player1.forEach((card, i) => {
         card.faceUp(false);
@@ -305,8 +310,139 @@
       });
 
       // Set up toggles for all of the lights and shadows.
-      let currentPlayer = 0;
       let shadowsEnabled = true;
+      let turnInProgress = false;
+
+      //Allows for game to be played and battle to happen if there is a tire between players.
+
+      function placePile(pile) {
+        const cardsPerRow = 4;
+        const rowCount = Math.ceil(pile.length / cardsPerRow);
+
+        pile.forEach(({ card }, index) => {
+          const row = Math.floor(index / cardsPerRow);
+          const column = index % cardsPerRow;
+          const cardsInRow = Math.min(
+            cardsPerRow,
+            pile.length - row * cardsPerRow,
+          );
+          card.targetPosition.set(
+            (column - (cardsInRow - 1) / 2) * 1.1,
+            0.5 + row * 0.03,
+            (row - (rowCount - 1) / 2) * 1.5,
+          );
+        });
+      }
+
+      function addToPile(pile, card, player, faceUp) {
+        pile.push({ card, player });
+        card.faceUp(faceUp);
+      }
+
+      function highestCards(cards) {
+        if (cards.length === 0) {
+          return [];
+        }
+
+        const highestValue = Math.max(...cards.map(({ card }) => card.value));
+        return cards.filter(({ card }) => card.value === highestValue);
+      }
+
+      function collectPile(winner, pile) {
+        const firstCardIndex = winner.deck.length;
+
+        pile.forEach(({ card }, index) => {
+          card.faceUp(false);
+          winner.deck.push(card);
+          card.moveSpeed = 0.035;
+          card.targetPosition.set(
+            winner.stackX,
+            (firstCardIndex + index) * 0.03,
+            winner.stackZ,
+          );
+        });
+      }
+
+      const wait = (milliseconds) =>
+        new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+      async function resolveBattle(pile) {
+        while (true) {
+          const revealedCards = [];
+
+          players.forEach((player) => {
+            if (player.deck.length >= 2) {
+              const faceDownCard = player.deck.shift();
+              addToPile(pile, faceDownCard, player, false);
+
+              const faceUpCard = player.deck.shift();
+              addToPile(pile, faceUpCard, player, true);
+              revealedCards.push({ card: faceUpCard, player });
+            } else if (player.deck.length === 1) {
+              const lastCard = player.deck.shift();
+              addToPile(pile, lastCard, player, true);
+              revealedCards.push({ card: lastCard, player });
+            }
+          });
+
+          placePile(pile);
+          await wait(1500);
+
+          if (revealedCards.length === 0) {
+            console.log("Battle ends in a draw: no cards remain to play.");
+            return;
+          }
+
+          const winners = highestCards(revealedCards);
+          if (winners.length === 1) {
+            const winner = winners[0].player;
+            console.log("Battle winner:", winner.name, winners[0].card.value);
+            collectPile(winner, pile);
+            return;
+          }
+        }
+      }
+
+      async function playTurn() {
+        turnInProgress = true;
+
+        try {
+          const activePlayers = players.filter(
+            (player) => player.deck.length > 0,
+          );
+          if (activePlayers.length < 2) {
+            console.log(
+              activePlayers.length === 1
+                ? `${activePlayers[0].name} wins the game!`
+                : "Game over: no cards remain.",
+            );
+            return;
+          }
+
+          const pile = [];
+          const revealedCards = activePlayers.map((player) => {
+            const card = player.deck.shift();
+            addToPile(pile, card, player, true);
+            return { card, player };
+          });
+
+          placePile(pile);
+          await wait(1500);
+
+          const winners = highestCards(revealedCards);
+          if (winners.length === 1) {
+            const winner = winners[0].player;
+            console.log("Winner:", winner.name, winners[0].card.value);
+            collectPile(winner, pile);
+          } else {
+            console.log("Battle!");
+            await resolveBattle(pile);
+          }
+        } finally {
+          turnInProgress = false;
+        }
+      }
+
       window.addEventListener("keydown", (e) => {
         const key = e.key.toLowerCase();
 
@@ -356,75 +492,23 @@
         }
 
         if (key === "n") {
-          // Reveals one card per player and then the winner get all three of the cards.
-          if (
-            player1.length === 0 ||
-            player2.length === 0 ||
-            player3.length === 0
-          ) {
-            console.log("Game Over");
-            return;
+          if (!turnInProgress) {
+            void playTurn();
           }
-
-          const c1 = player1.shift();
-          const c2 = player2.shift();
-          const c3 = player3.shift();
-
-          c1.faceUp(true);
-          c2.faceUp(true);
-          c3.faceUp(true);
-
-          c1.targetPosition.set(-1.5, 1, 0);
-          c2.targetPosition.set(0, 1, 0);
-          c3.targetPosition.set(1.5, 1, 0);
-
-          setTimeout(() => {
-            let winnerDeck = player1;
-            let highestCard = c1;
-
-            if (c2.value > highestCard.value) {
-              highestCard = c2;
-              winnerDeck = player2;
-            }
-
-            if (c3.value > highestCard.value) {
-              highestCard = c3;
-              winnerDeck = player3;
-            }
-
-            console.log("Winner:", highestCard.value);
-
-            c1.faceUp(false);
-            c2.faceUp(false);
-            c3.faceUp(false);
-
-            winnerDeck.push(c1, c2, c3);
-
-            if (winnerDeck === player1) {
-              c1.targetPosition.set(-5, player1.length * 0.05, 0);
-              c2.targetPosition.set(-5, (player1.length + 1) * 0.05, 0);
-              c3.targetPosition.set(-5, (player1.length + 2) * 0.05, 0);
-            }
-
-            if (winnerDeck === player2) {
-              c1.targetPosition.set(5, player2.length * 0.05, 0);
-              c2.targetPosition.set(5, (player2.length + 1) * 0.05, 0);
-              c3.targetPosition.set(5, (player2.length + 2) * 0.05, 0);
-            }
-
-            if (winnerDeck === player3) {
-              c1.targetPosition.set(0, player3.length * 0.05, -5);
-              c2.targetPosition.set(0, (player3.length + 1) * 0.05, -5);
-              c3.targetPosition.set(0, (player3.length + 2) * 0.05, -5);
-            }
-          }, 1500);
         }
       });
 
       function animate() {
         requestAnimationFrame(animate);
         deck.forEach((card) => {
-          card.mesh.position.lerp(card.targetPosition, 0.1);
+          card.mesh.position.lerp(card.targetPosition, card.moveSpeed ?? 0.1);
+          if (
+            card.moveSpeed !== undefined &&
+            card.mesh.position.distanceToSquared(card.targetPosition) < 0.0004
+          ) {
+            card.mesh.position.copy(card.targetPosition);
+            card.moveSpeed = undefined;
+          }
         });
         renderer.render(scene, camera);
       }
