@@ -356,8 +356,8 @@
           winner.deck.push(card);
           card.moveSpeed = 0.035;
           card.targetPosition.set(
-            winner.stackX,
-            (firstCardIndex + index) * 0.03,
+            winner.stackX + 0.18,
+            (firstCardIndex + index) * 0.03 + 0.2,
             winner.stackZ,
           );
         });
